@@ -58,7 +58,7 @@ def login(user,password):
     return login_token,userid
  
 #主函数
-def main(user, passwd, step):
+def main(user, passwd, step, sckey):
     user = str(user)
     password = str(passwd)
     step = str(step)
@@ -67,8 +67,8 @@ def main(user, passwd, step):
         return
     
     if step == '':
-        print ("已设置为随机步数（10000-19999）")
-        step = str(random.randint(10000,19999))
+        print ("已设置为随机步数（98000-99989）")
+        step = str(random.randint(98000,99989))
     login_token = 0
     login_token,userid = login(user,password)
     if login_token == 0:
@@ -98,8 +98,9 @@ def main(user, passwd, step):
     
     response = requests.post(url, data=data, headers=head).json()
     #print(response)
-    result = f"{user[:4]}****{user[-4:]}: [{now}] 修改步数（{step}）"+ response['message']
+    result = f"[{now}] 修改步数（{step}）"+ response['message']
     print(result)
+    push_wx(sckey, result)
     return result
   
 #获取时间戳
@@ -117,8 +118,8 @@ def get_app_token(login_token):
     #print("app_token获取成功！")
     #print(app_token)
     return app_token
-
-# 推送server酱
+    
+# 推送server
 def push_wx(sckey, desp=""):
     """
     推送消息到微信
@@ -140,91 +141,21 @@ def push_wx(sckey, desp=""):
         else:
             print(f"[{now}] 推送失败：{json_data['errno']}({json_data['errmsg']})")
 
-# 推送server
-def push_server(sckey, desp=""):
-    """
-    推送消息到微信
-    """
-    if sckey == '':
-        print("[注意] 未提供sckey，不进行微信推送！")
-    else:
-        server_url = f"https://sctapi.ftqq.com/{sckey}.send"
-        params = {
-            "title": '小米运动 步数修改',
-            "desp": desp
-        }
- 
-        response = requests.get(server_url, params=params)
-        json_data = response.json()
- 
-        if json_data['code'] == 0:
-            print(f"[{now}] 推送成功。")
-        else:
-            print(f"[{now}] 推送失败：{json_data['code']}({json_data['message']})")
-
-# 推送tg
-def push_tg(token, chat_id, desp=""):
-    """
-    推送消息到TG
-    """
-    if token == '':
-        print("[注意] 未提供token，不进行tg推送！")
-    elif chat_id == '':
-        print("[注意] 未提供chat_id，不进行tg推送！")
-    else:
-        server_url = f"https://api.telegram.org/bot{token}/sendmessage"
-        params = {
-            "text": '小米运动 步数修改\n\n' + desp,
-            "chat_id": chat_id
-        }
- 
-        response = requests.get(server_url, params=params)
-        json_data = response.json()
- 
-        if json_data['ok'] == True:
-            print(f"[{now}] 推送成功。")
-        else:
-            print(f"[{now}] 推送失败：{json_data['error_code']}({json_data['description']})")
-
 if __name__ ==  "__main__":
-    # Push Mode
-    Pm = input()
-    if Pm == 'wx' or Pm == 'nwx':
-        # ServerChan
-        sckey = input()
-        if str(sckey) == '0':
-            sckey = ''
-    elif Pm == 'tg':
-        token = input()
-        sl = token.split('-')
-        if len(sl) != 2:
-            print('tg推送参数有误！')
-
+    # ServerChan
+    sckey = input()
+    if str(sckey) == '0':
+        sckey = ''
     # 用户名（格式为 13800138000）
     user = input()
     # 登录密码
     passwd = input()
     # 要修改的步数，直接输入想要修改的步数值，留空为随机步数
     step = input()
-
-    user_list = user.split('#')
-    passwd_list = passwd.split('#')
     setp_array = step.split('-')
-
-    if len(user_list) == len(passwd_list):
-        push = ''
-        for line in range(0,len(user_list)):
-            if len(setp_array) == 2:
-                step = str(random.randint(int(setp_array[0]),int(setp_array[1])))
-            elif str(step) == '0':
-                step = ''
-            push += main(user_list[line], passwd_list[line], step) + '\n'
-        if Pm == 'wx':
-            push_wx(sckey, push)
-        elif Pm == 'nwx':
-            push_server(sckey, push)
-        elif Pm == 'tg':
-            push_tg(sl[0], sl[1], push)
-    else:
-        print('用户名和密码数量不对')
+    if len(setp_array) == 2:
+        step = str(random.randint(int(setp_array[0]),int(setp_array[1])))
+    elif str(step) == '0':
+        step = ''
+    main(user, passwd, step, sckey)
     
